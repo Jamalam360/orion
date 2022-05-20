@@ -9,8 +9,10 @@ if (Deno.args.length > 0 && Deno.args[0].includes("--gen-key")) {
 const keys: string[] = [];
 
 for (const line of (await Deno.readTextFile("keys.txt")).split("\n")) {
-  const value = line.split("=")[1];
-  keys.push(value.trim());
+  if (line.includes("=")) {
+    const value = line.split("=")[1];
+    keys.push(value.trim());
+  }
 }
 
 const app = new Application();
