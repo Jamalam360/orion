@@ -16,6 +16,36 @@ for (const line of (await Deno.readTextFile("keys.txt")).split("\n")) {
 const app = new Application();
 const router = new Router();
 
+router.post("/deploy/pinguino", async (ctx) => {
+  const version = ctx.request.url.searchParams.get("version");
+  const mavenUrl =
+    `https://maven.jamalam.tech/releases/io/github/jamalam360/pinguino/${version}/pinguino-${version}.jar`;
+  const data = await (await fetch(mavenUrl)).arrayBuffer();
+  await Deno.remove("/root/Pinguino/pinguino.jar");
+  await Deno.writeFile("/root/Pinguino/pinguino.jar", new Uint8Array(data));
+
+  const p = Deno.run({ cmd: ["systemctl", "restart", "pinguino.service"] });
+  await p.status();
+
+  ctx.response.status = 200;
+  ctx.response.body = {
+    message: `Successfully updated Pinguino to ${version}`,
+  };
+});
+
+router.post("/deploy/pack", async (ctx) => {
+  const p = Deno.run({
+    cmd: ["git", "pull"],
+    cwd: "/var/www/pack",
+  });
+  await p.status();
+
+  ctx.response.status = 200;
+  ctx.response.body = {
+    message: "Successfully updated modpack",
+  };
+});
+
 app.use(async (ctx, next) => {
   if (
     ctx.request.headers.has("authorization") &&
@@ -28,15 +58,6 @@ app.use(async (ctx, next) => {
       message: "Invalid authorization token",
     };
   }
-});
-
-router.post("/deploy/pinguino", async (ctx) => {
-  const version = ctx.request.url.searchParams.get("version");
-  const mavenUrl =
-    `https://maven.jamalam.tech/releases/io/github/jamalam360/pinguino/${version}/pinguino-${version}.jar`;
-  const data = await (await fetch(mavenUrl)).arrayBuffer();
-  await Deno.remove("../Pinguino/pinguino.jar");
-  await Deno.writeFile("../Pinguino/pinguino.jar", new Uint8Array(data));
 });
 
 app.use(router.allowedMethods());
