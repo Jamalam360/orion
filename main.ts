@@ -58,6 +58,9 @@ app.use(async (ctx, next) => {
   ) {
     await next();
   } else {
+    console.log(
+        cyan(ctx.request.method + " " + ctx.request.url + " - Unauthorized"),
+    );
     ctx.response.status = 403;
     ctx.response.body = {
       message: "Invalid authorization token",
@@ -66,6 +69,23 @@ app.use(async (ctx, next) => {
 });
 
 app.use(router.routes());
+
+// Logger
+app.use(async (ctx, next) => {
+  await next();
+  const rt = ctx.response.headers.get("X-Response-Time");
+  console.log(
+    cyan(ctx.request.method + " " + ctx.request.url + " - " + rt),
+  );
+});
+
+// Timing
+app.use(async (ctx, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  ctx.response.headers.set("X-Response-Time", ms + "ms");
+});
 
 await app.listen({
     port: 9010,
