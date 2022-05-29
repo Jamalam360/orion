@@ -46,6 +46,10 @@ router.post("/deploy/pack", async (ctx) => {
     cwd: "/var/www/pack",
   });
   await p.status();
+  const p2 = Deno.run({
+    cmd: ["nginx", "-s", "reload"],
+  });
+  await p2.status();
 });
 
 app.use(async (ctx, next) => {
