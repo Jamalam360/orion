@@ -1,8 +1,10 @@
 import { Application, Router } from "https://deno.land/x/oak@v10.5.1/mod.ts";
 import { cyan } from "https://deno.land/std@0.138.0/fmt/colors.ts";
 
-const CERTIFICATE_PATH = "/etc/letsencrypt/live/server-api.jamalam.tech/fullchain.pem";
-const PRIVATE_KEY_PATH = "/etc/letsencrypt/live/server-api.jamalam.tech/privkey.pem";
+const CERTIFICATE_PATH =
+  "/etc/letsencrypt/live/server-api.jamalam.tech/fullchain.pem";
+const PRIVATE_KEY_PATH =
+  "/etc/letsencrypt/live/server-api.jamalam.tech/privkey.pem";
 
 if (Deno.args.length > 0 && Deno.args[0].includes("--gen-key")) {
   console.log(`Generated key: ${cyan(crypto.randomUUID())}`);
@@ -44,11 +46,6 @@ router.post("/deploy/pack", async (ctx) => {
     cwd: "/var/www/pack",
   });
   await p.status();
-
-  ctx.response.status = 200;
-  ctx.response.body = {
-    message: "Successfully updated modpack",
-  };
 });
 
 app.use(async (ctx, next) => {
@@ -59,7 +56,7 @@ app.use(async (ctx, next) => {
     await next();
   } else {
     console.log(
-        cyan(ctx.request.method + " " + ctx.request.url + " - Unauthorized"),
+      cyan(ctx.request.method + " " + ctx.request.url + " - Unauthorized"),
     );
     ctx.response.status = 403;
     ctx.response.body = {
@@ -88,8 +85,8 @@ app.use(async (ctx, next) => {
 });
 
 await app.listen({
-    port: 9010,
-    secure: true,
-    certFile: CERTIFICATE_PATH,
-    keyFile: PRIVATE_KEY_PATH,
+  port: 9010,
+  secure: true,
+  certFile: CERTIFICATE_PATH,
+  keyFile: PRIVATE_KEY_PATH,
 });
