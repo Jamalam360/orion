@@ -50,6 +50,11 @@ router.post("/deploy/pack", async (ctx) => {
     cmd: ["nginx", "-s", "reload"],
   });
   await p2.status();
+
+  ctx.response.status = 200;
+  ctx.response.body = {
+    message: "Successfully updated pack",
+  };
 });
 
 app.use(async (ctx, next) => {
