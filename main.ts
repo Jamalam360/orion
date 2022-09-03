@@ -16,7 +16,11 @@ if (Deno.env.get("ORION_SSL_KEY") && Deno.env.get("ORION_SSL_CERT")) {
 const token = Deno.env.get("ORION_TOKEN")!;
 
 async function dockerRestart(container: string) {
-  await Deno.spawn("docker", { args: ["restart", container] });
+  await Deno.spawn("docker", {
+    args: ["restart", container],
+    stdout: "inherit",
+    stderr: "inherit",
+  });
 }
 
 const app = new Hono();
