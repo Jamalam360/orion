@@ -50,7 +50,7 @@ app.post("/deploy/pack", async (c) => {
   c.json({ message: "Successfully updated pack" });
 });
 
-Deno.serve({
+await Deno.serve({
   ...ssl,
   port: parseInt(Deno.env.get("ORION_PORT") ?? "8080"),
   onListen: ({ hostname, port }) =>
