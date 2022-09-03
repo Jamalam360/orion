@@ -25,9 +25,9 @@ app.use("/deploy/*", bearerAuth({ token }));
 app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
-  await Deno.spawn("git", { args: ["pull"], cwd: "/root/content/pack" });
+  await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
 
-  for await (const file of walk("/root/content/pack")) {
+  for await (const file of walk("/content/pack")) {
     for (
       const path of [
         "/.github",
