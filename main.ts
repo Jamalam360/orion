@@ -42,7 +42,11 @@ app.post("/deploy/pack", async (c) => {
       ]
     ) {
       if (file.path.includes(path)) {
-        await Deno.remove(file.path);
+        try {
+          await Deno.remove(file.path, { recursive: true });
+        } catch (e) {
+          console.log(e);
+        }
       }
     }
   }
