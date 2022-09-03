@@ -28,6 +28,7 @@ app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
   await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
+  console.log("Pulled pack repo");
 
   const toDelete: string[] = [];
 
@@ -64,7 +65,11 @@ app.post("/deploy/pack", async (c) => {
     }
   }
 
+  console.log("Deleted ignored files");
+
   await dockerRestart("nginx");
+  console.log("Deployed pack");
+
   return c.json({ message: "Successfully updated pack" }, 200);
 });
 
