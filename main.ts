@@ -29,6 +29,8 @@ app.get("/ping", (c) => c.text("Pong!"));
 app.post("/deploy/pack", async (c) => {
   await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
 
+  const toDelete = [];
+
   for await (const file of walk("/content/pack")) {
     for (
       const path of [
@@ -42,12 +44,16 @@ app.post("/deploy/pack", async (c) => {
       ]
     ) {
       if (file.path.includes(path)) {
-        try {
-          await Deno.remove(file.path, { recursive: true });
-        } catch (e) {
-          console.log(e);
-        }
+        toDelete.push(file.path);
       }
+    }
+  }
+
+  for (const path of toDelete) {
+    try {
+      await Deno.remove(path, { recursive: true });
+    } catch (e) {
+      console.log(e);
     }
   }
 
