@@ -60,3 +60,5 @@ await Deno.serve({
     return new Response("Internal Server Error", { status: 500 });
   },
 }, app.fetch);
+
+console.log("Orion API has stopped");
