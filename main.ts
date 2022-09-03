@@ -52,6 +52,11 @@ app.post("/deploy/pack", async (c) => {
   c.json({ message: "Successfully updated pack" });
 });
 
+app.onError((err, c) => {
+  console.error("Orion API encountered an error:", err);
+  return c.text("Internal Server error", 500);
+});
+
 await serve(app.fetch, {
   port: parseInt(Deno.env.get("ORION_PORT") ?? "8080"),
   onListen: ({ hostname, port }) =>
