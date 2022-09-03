@@ -29,7 +29,7 @@ app.get("/ping", (c) => c.text("Pong!"));
 app.post("/deploy/pack", async (c) => {
   await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
 
-  const toDelete = [];
+  const toDelete: string[] = [];
 
   for await (const file of walk("/content/pack")) {
     for (
@@ -44,6 +44,13 @@ app.post("/deploy/pack", async (c) => {
       ]
     ) {
       if (file.path.includes(path)) {
+        if (file.isFile) {
+          // Check if the files parent directory is already in the toDelete array
+          if (toDelete.includes(file.path.split("/").slice(0, -1).join("/"))) {
+            continue;
+          }
+        }
+
         toDelete.push(file.path);
       }
     }
