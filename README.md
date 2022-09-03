@@ -1,3 +1,3 @@
-# Server API
+# Orion API
 
-An API for interacting with my Digital Ocean server
+A private API for interacting with my VPS, Orion.

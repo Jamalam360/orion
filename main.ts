@@ -1,101 +1,61 @@
-import { Application, Router } from "https://deno.land/x/oak@v10.5.1/mod.ts";
-import { cyan } from "https://deno.land/std@0.138.0/fmt/colors.ts";
+import { Hono } from "https://deno.land/x/hono@v2.1.3/mod.ts";
+import {
+  bearerAuth,
+  logger,
+} from "https://deno.land/x/hono@v2.1.3/middleware.ts";
+import { walk } from "https://deno.land/std@v0.154.0/fs/mod.ts";
 
-const CERTIFICATE_PATH =
-  "/etc/letsencrypt/live/server-api.jamalam.tech/fullchain.pem";
-const PRIVATE_KEY_PATH =
-  "/etc/letsencrypt/live/server-api.jamalam.tech/privkey.pem";
+const ssl: Record<string, string> = {};
 
-if (Deno.args.length > 0 && Deno.args[0].includes("--gen-key")) {
-  console.log(`Generated key: ${cyan(crypto.randomUUID())}`);
-  Deno.exit(0);
+if (Deno.env.get("ORION_SSL_KEY") && Deno.env.get("ORION_SSL_CERT")) {
+  ssl.key = await Deno.readTextFile(Deno.env.get("ORION_SSL_KEY")!);
+  ssl.cert = await Deno.readTextFile(Deno.env.get("ORION_SSL_CERT")!);
 }
 
-const keys: string[] = [];
+const token = Deno.env.get("ORION_TOKEN")!;
 
-for (const line of (await Deno.readTextFile("keys.txt")).split("\n")) {
-  if (line.includes("=")) {
-    const value = line.split("=")[1];
-    keys.push(value.trim());
-  }
+async function dockerRestart(container: string) {
+  await Deno.spawn("docker", { args: ["restart", container] });
 }
 
-const app = new Application();
-const router = new Router();
+const app = new Hono();
 
-router.post("/deploy/pinguino", async (ctx) => {
-  const version = ctx.request.url.searchParams.get("version");
-  const mavenUrl =
-    `https://maven.jamalam.tech/releases/io/github/jamalam360/pinguino/${version}/pinguino-${version}.jar`;
-  const data = await (await fetch(mavenUrl)).arrayBuffer();
-  await Deno.remove("/root/Pinguino/pinguino.jar");
-  await Deno.writeFile("/root/Pinguino/pinguino.jar", new Uint8Array(data));
+app.use("*", logger());
+app.use("/deploy/*", bearerAuth({ token }));
+app.get("/ping", (c) => c.text("Pong!"));
 
-  const p = Deno.run({ cmd: ["systemctl", "restart", "pinguino.service"] });
-  await p.status();
+app.post("/deploy/pack", async (c) => {
+  await Deno.spawn("git", { args: ["pull"], cwd: "/root/content/pack" });
 
-  ctx.response.status = 200;
-  ctx.response.body = {
-    message: `Successfully updated Pinguino to ${version}`,
-  };
-});
-
-router.post("/deploy/pack", async (ctx) => {
-  const p = Deno.run({
-    cmd: ["git", "pull"],
-    cwd: "/var/www/pack",
-  });
-  await p.status();
-  const p2 = Deno.run({
-    cmd: ["nginx", "-s", "reload"],
-  });
-  await p2.status();
-
-  ctx.response.status = 200;
-  ctx.response.body = {
-    message: "Successfully updated pack",
-  };
-});
-
-app.use(async (ctx, next) => {
-  if (
-    ctx.request.headers.has("authorization") &&
-    keys.includes(ctx.request.headers.get("authorization")!)
-  ) {
-    await next();
-  } else {
-    console.log(
-      cyan(ctx.request.method + " " + ctx.request.url + " - Unauthorized"),
-    );
-    ctx.response.status = 403;
-    ctx.response.body = {
-      message: "Invalid authorization token",
-    };
+  for await (const file of walk("/root/content/pack")) {
+    for (
+      const path of [
+        "/.github",
+        "/.vscode",
+        "/bot",
+        "/datapack",
+        "/.gitattributes",
+        "/.gitignore",
+        "/categories.json",
+      ]
+    ) {
+      if (file.path.endsWith(path)) {
+        await Deno.remove(file.path);
+      }
+    }
   }
+
+  await dockerRestart("nginx");
+  c.json({ message: "Successfully updated pack" });
 });
 
-app.use(router.routes());
-
-// Logger
-app.use(async (ctx, next) => {
-  await next();
-  const rt = ctx.response.headers.get("X-Response-Time");
-  console.log(
-    cyan(ctx.request.method + " " + ctx.request.url + " - " + rt),
-  );
-});
-
-// Timing
-app.use(async (ctx, next) => {
-  const start = Date.now();
-  await next();
-  const ms = Date.now() - start;
-  ctx.response.headers.set("X-Response-Time", ms + "ms");
-});
-
-await app.listen({
-  port: 9010,
-  secure: true,
-  certFile: CERTIFICATE_PATH,
-  keyFile: PRIVATE_KEY_PATH,
-});
+Deno.serve({
+  ...ssl,
+  port: parseInt(Deno.env.get("ORION_PORT") ?? "8080"),
+  onListen: ({ hostname, port }) =>
+    console.log(`Orion API listening on ${hostname}:${port}`),
+  onError: (e) => {
+    console.error("Orion API encountered an error:", e);
+    return new Response("Internal Server Error", { status: 500 });
+  },
+}, app.fetch);
