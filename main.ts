@@ -14,15 +14,6 @@ if (Deno.env.get("ORION_SSL_KEY") && Deno.env.get("ORION_SSL_CERT")) {
 }
 
 const token = Deno.env.get("ORION_TOKEN")!;
-
-async function dockerRestart(container: string) {
-  await Deno.spawn("docker", {
-    args: ["restart", container],
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-}
-
 const app = new Hono();
 
 app.use("*", logger());
@@ -32,8 +23,6 @@ app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
   await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
-  console.log("Pulled pack repo");
-
   const toDelete: string[] = [];
 
   for await (const file of walk("/content/pack")) {
@@ -68,11 +57,6 @@ app.post("/deploy/pack", async (c) => {
       console.log(e);
     }
   }
-
-  console.log("Deleted ignored files");
-
-  await dockerRestart("nginx");
-  console.log("Deployed pack");
 
   return c.json({ message: "Successfully updated pack" }, 200);
 });
