@@ -22,6 +22,7 @@ const app = new Hono();
 
 app.use("*", logger());
 app.use("/deploy/*", bearerAuth({ token }));
+app.get("/", (c) => c.text("Hello World!"));
 app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
