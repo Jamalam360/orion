@@ -41,7 +41,7 @@ app.post("/deploy/pack", async (c) => {
         "/categories.json",
       ]
     ) {
-      if (file.path.endsWith(path)) {
+      if (file.path.includes(path)) {
         await Deno.remove(file.path);
       }
     }
