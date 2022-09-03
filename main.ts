@@ -65,8 +65,7 @@ app.post("/deploy/pack", async (c) => {
   }
 
   await dockerRestart("nginx");
-  c.status(200);
-  return c.json({ message: "Successfully updated pack" });
+  return c.json({ message: "Successfully updated pack" }, 200);
 });
 
 app.onError((err, c) => {
