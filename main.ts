@@ -98,7 +98,7 @@ app.post("/deploy/pack-next", async (c) => {
 });
 
 app.onError((err, c) => {
-  console.error("Orion API encountered an error:", err);
+  console.log("Orion API encountered an error:", err);
   return c.text("Internal Server error", 500);
 });
 
@@ -107,7 +107,7 @@ await serve(app.fetch, {
   onListen: ({ hostname, port }) =>
     console.log(`Orion API listening on ${hostname}:${port}`),
   onError: (e) => {
-    console.error("Orion API encountered an error:", e);
+    console.log("Orion API encountered an error:", e);
     return new Response("Internal Server Error", { status: 500 });
   },
 });
