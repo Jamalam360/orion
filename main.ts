@@ -22,6 +22,7 @@ app.get("/", (c) => c.text("Hello World!"));
 app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
+  try {
   await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
   const toDelete: string[] = [];
 
@@ -58,43 +59,52 @@ app.post("/deploy/pack", async (c) => {
     }
   }
 
-  return c.json({ message: "Successfully updated pack" }, 200);
+    return c.json({ message: "Successfully updated pack" }, 200);
+  } catch (err) {
+    console.log("Orion API encountered an error:", err);
+    return c.text("Internal Server error", 500);
+  }
 });
 
 app.post("/deploy/pack-next", async (c) => {
-  await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack-next" });
-  const toDelete: string[] = [];
+  try {
+    await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack-next" });
+    const toDelete: string[] = [];
 
-  for await (const file of walk("/content/pack-next")) {
-    for (
-      const path of [
-        "/.github",
-        "/.gitattributes",
-        "/.gitignore",
-      ]
-    ) {
-      if (file.path.includes(path)) {
-        if (file.isFile) {
-          // Check if the files parent directory is already in the toDelete array
-          if (toDelete.includes(file.path.split("/").slice(0, -1).join("/"))) {
-            continue;
+    for await (const file of walk("/content/pack-next")) {
+      for (
+        const path of [
+          "/.github",
+          "/.gitattributes",
+          "/.gitignore",
+        ]
+      ) {
+        if (file.path.includes(path)) {
+          if (file.isFile) {
+            // Check if the files parent directory is already in the toDelete array
+            if (toDelete.includes(file.path.split("/").slice(0, -1).join("/"))) {
+              continue;
+            }
           }
-        }
 
-        toDelete.push(file.path);
+          toDelete.push(file.path);
+        }
       }
     }
-  }
 
-  for (const path of toDelete) {
-    try {
-      await Deno.remove(path, { recursive: true });
-    } catch (e) {
-      console.log(e);
+    for (const path of toDelete) {
+      try {
+        await Deno.remove(path, { recursive: true });
+      } catch (e) {
+        console.log(e);
+      }
     }
-  }
 
-  return c.json({ message: "Successfully updated pack-next" }, 200);
+    return c.json({ message: "Successfully updated pack-next" }, 200);
+  } catch (err) {
+    console.log("Orion API encountered an error:", err);
+    return c.text("Internal Server error", 500);
+  }
 });
 
 app.onError((err, c) => {
