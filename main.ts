@@ -1,10 +1,12 @@
-import { Hono } from "https://deno.land/x/hono@v2.1.3/mod.ts";
+import { Hono } from "https://deno.land/x/hono@v2.5.6/mod.ts";
 import {
   bearerAuth,
   logger,
-} from "https://deno.land/x/hono@v2.1.3/middleware.ts";
-import { walk } from "https://deno.land/std@v0.154.0/fs/mod.ts";
-import { serve } from "https://deno.land/std@v0.154.0/http/mod.ts";
+} from "https://deno.land/x/hono@v2.5.6/middleware.ts";
+import { walk } from "https://deno.land/std@v0.166.0/fs/mod.ts";
+import { serve } from "https://deno.land/std@v0.166.0/http/mod.ts";
+import deployModpackUpdate from "./modpacks.ts";
+import { StatusCode } from "https://deno.land/x/hono@v2.5.6/utils/http-status.ts";
 
 const ssl: Record<string, string> = {};
 
@@ -22,58 +24,13 @@ app.get("/", (c) => c.text("Hello World!"));
 app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
-  try {
-  await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack" });
-  const toDelete: string[] = [];
-
-  for await (const file of walk("/content/pack")) {
-    for (
-      const path of [
-        "/.github",
-        "/.vscode",
-        "/bot",
-        "/datapack",
-        "/.gitattributes",
-        "/.gitignore",
-        "/categories.json",
-      ]
-    ) {
-      if (file.path.includes(path)) {
-        if (file.isFile) {
-          // Check if the files parent directory is already in the toDelete array
-          if (toDelete.includes(file.path.split("/").slice(0, -1).join("/"))) {
-            continue;
-          }
-        }
-
-        toDelete.push(file.path);
-      }
-    }
-  }
-
-  for (const path of toDelete) {
-    try {
-      await Deno.remove(path, { recursive: true });
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-    return c.json({ message: "Successfully updated pack" }, 200);
-  } catch (err) {
-    console.log("Orion API encountered an error:", err);
-    return c.text("Internal Server error", 500);
-  }
+  const res = await deployModpackUpdate("pack");
+  return c.json(res.response, res.code as StatusCode);
 });
 
 app.post("/deploy/pack-next", async (c) => {
-  try {
-    await Deno.spawn("git", { args: ["pull"], cwd: "/content/pack-next" });
-    return c.json({ message: "Successfully updated pack-next" }, 200);
-  } catch (err) {
-    console.log("Orion API encountered an error:", err);
-    return c.text("Internal Server error", 500);
-  }
+  const res = await deployModpackUpdate("pack-next");
+  return c.json(res.response, res.code as StatusCode);
 });
 
 app.onError((err, c) => {
