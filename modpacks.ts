@@ -35,12 +35,12 @@ export default async function deployModpackUpdate(
     };
   } catch (err) {
     console.log("Orion API encountered an error:", err);
-      return {
-          code: 500,
-          response: {
-              status: "An unknown error was encountered",
-              err: err
-          }
-    }
+    return {
+      code: 500,
+      response: {
+        status: "An unknown error was encountered",
+        err: err,
+      },
+    };
   }
 }
