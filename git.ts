@@ -1,16 +1,16 @@
 const decoder = new TextDecoder();
 
-export default async function deployModpackUpdate(
-  subpath: string,
+export default async function updateGitRepository(
+  path: string,
 ): Promise<{ response: Record<string, string>; code: number }> {
   try {
     const command = new Deno.Command("git", {
       args: ["pull"],
-      cwd: `/content/${subpath}`,
+      cwd: path,
     });
     const { code, stdout, stderr } = await command.output();
     console.log(
-      `Orion API updated modpack /content/${subpath} with code ${code}. STDOUT and STDERR are displayed below.`,
+      `Orion API updated git repository ${path} with code ${code}. STDOUT and STDERR are displayed below.`,
     );
     console.log(decoder.decode(stdout));
     console.log(decoder.decode(stderr));
@@ -29,8 +29,7 @@ export default async function deployModpackUpdate(
     return {
       code: 200,
       response: {
-        status: "Successfully ran `git pull` in directory `/content/" +
-          subpath + "`",
+        status: "Successfully updated repository"
       },
     };
   } catch (err) {

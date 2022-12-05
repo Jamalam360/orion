@@ -3,9 +3,8 @@ import {
   bearerAuth,
   logger,
 } from "https://deno.land/x/hono@v2.5.6/middleware.ts";
-import { walk } from "https://deno.land/std@v0.166.0/fs/mod.ts";
 import { serve } from "https://deno.land/std@v0.166.0/http/mod.ts";
-import deployModpackUpdate from "./modpacks.ts";
+import deployModpackUpdate from "./git.ts";
 import { StatusCode } from "https://deno.land/x/hono@v2.5.6/utils/http-status.ts";
 
 const ssl: Record<string, string> = {};
@@ -24,12 +23,17 @@ app.get("/", (c) => c.text("Hello World!"));
 app.get("/ping", (c) => c.text("Pong!"));
 
 app.post("/deploy/pack", async (c) => {
-  const res = await deployModpackUpdate("pack");
+  const res = await deployModpackUpdate("/content/pack");
   return c.json(res.response, res.code as StatusCode);
 });
 
 app.post("/deploy/pack-next", async (c) => {
-  const res = await deployModpackUpdate("pack-next");
+  const res = await deployModpackUpdate("/content/pack-next");
+  return c.json(res.response, res.code as StatusCode);
+});
+
+app.post("/deploy/teach-man-fish", async (c) => {
+  const res = await deployModpackUpdate("/content/teach-man-fish");
   return c.json(res.response, res.code as StatusCode);
 });
 
