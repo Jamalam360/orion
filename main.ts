@@ -27,11 +27,6 @@ app.post("/deploy/pack", async (c) => {
   return c.json(res.response, res.code as StatusCode);
 });
 
-app.post("/deploy/pack-next", async (c) => {
-  const res = await deployModpackUpdate("/content/pack-next");
-  return c.json(res.response, res.code as StatusCode);
-});
-
 app.post("/deploy/teach-man-fish", async (c) => {
   const res = await deployModpackUpdate("/content/teach-man-fish");
   return c.json(res.response, res.code as StatusCode);
