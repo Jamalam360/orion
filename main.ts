@@ -32,6 +32,11 @@ app.post("/deploy/teach-man-fish", async (c) => {
   return c.json(res.response, res.code as StatusCode);
 });
 
+app.post("/deploy/its-clearing-up", async (c) => {
+  const res = await deployModpackUpdate("/content/its-clearing-up");
+  return c.json(res.response, res.code as StatusCode);
+});
+
 app.onError((err, c) => {
   console.log("Orion API encountered an error:", err);
   return c.text("Internal Server error", 500);
